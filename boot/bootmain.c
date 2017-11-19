@@ -1,9 +1,9 @@
 #include <kern/display.h>
 
 void bootmain(){
-   __fb_print(0,'H');
-  __fb_print(1,'E');
-  __fb_print(2,'L');
-  __fb_print(3,'L');
-  __fb_print(4,'O');
+  fb_print_clr('H', FB_BLACK, FB_GREEN);
+  fb_print_clr('E', FB_BLACK, FB_GREEN);
+  fb_print_clr('L', FB_BLACK, FB_GREEN);
+  fb_print_clr('L', FB_BLACK, FB_GREEN);
+  fb_print_clr('O', FB_BLACK, FB_GREEN);
 }

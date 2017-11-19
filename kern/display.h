@@ -8,6 +8,7 @@
 #define FBUFFER_IO 0x000b8000 // IO area in memory which maps framebuffer
 #define FBUFFER_COLS 80
 #define FBUFFER_ROWS 25
+#define FBUFFER_SIZE (FBUFFER_ROWS * FBUFFER_COLS)
 
 // Colors
 #define FB_BLACK 0x0
@@ -27,9 +28,10 @@
 #define FB_LBROWN 0xE
 #define FB_WHITE 0xF
 
-void __fb_print_clr(int, char, uint16_t, uint16_t); // print colored char at i-th position
+void __fb_print_clr(int, char, char, char); // print colored char at i-th position
 void __fb_print(int, char); // print char at ith position (white on black);
-
+void fb_print(char chr);
+void fb_print_clr(char chr, char background, char foreground);
 
 
 
