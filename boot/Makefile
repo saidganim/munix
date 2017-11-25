@@ -6,14 +6,11 @@ obj/boot.elf: obj/boot.elf_
 	$(shell objcopy -S -O binary -j .text obj/boot.elf_ obj/boot.elf)
 	$(shell boot/make_boot.py obj/boot.elf)
 
-obj/boot.elf_: obj/bootasm.o obj/bootmain.o obj/display.o
+obj/boot.elf_: obj/bootasm.o obj/bootmain.o
 	$(LD) -N $^ -o $@ -T boot/boot.ld
 
-obj/display.o: kern/display.c
-	$(CC) -c $(CFLAGS) $< -o $@
-
 obj/bootasm.o: boot/bootasm.S
-	$(CC) $(CFLAGS) -Os -c -o $@ $<
+	$(CC) $(CFLAGS) -Os -c -o $@ $^
 
 obj/bootmain.o: boot/bootmain.c
-	$(CC) $(CFLAGS) -Os -c -o $@ $<
+	$(CC) $(CFLAGS) -Os -c -o $@ $^

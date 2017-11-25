@@ -3,9 +3,9 @@
 #ifndef MX_ELF_H
 #define MX_ELF_H
 
-#define ELF_MAGIC 0x464C457FU   /* "\x7FELF" in little endian */
+#define ELF_MAGIC 0x464C457F   /* "\x7FELF" in little endian */
 
-struct elf {
+struct elf_hdr {
     uint32_t e_magic;
     uint8_t  e_elf[12];
     uint16_t e_type;

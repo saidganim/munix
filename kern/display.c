@@ -34,3 +34,10 @@ void fb_print_clr(char chr, char background, char foreground){
   __fb_print_clr(fb_cursor++, chr, background, foreground);
   __move_cursor(fb_cursor);
 }
+
+void fb_clear(){
+  uint16_t index = 0;
+  while(index < FBUFFER_SIZE)
+    frame_buffer[index++] = 0;
+  fb_cursor = 0;
+}
