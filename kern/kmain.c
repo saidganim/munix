@@ -12,4 +12,5 @@ void kmain(){
   fb_print('0');
   fb_print('.');
   fb_print('1');
+  while(true){};
 }

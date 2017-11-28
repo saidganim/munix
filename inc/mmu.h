@@ -33,9 +33,26 @@
 #define CR4_PVI     0x00000002  /* Protected-Mode Virtual Interrupts */
 #define CR4_VME     0x00000001  /* V86 Mode Extensions */
 
+#define PTE_P           0x001   // Present
+#define PTE_W           0x002   // Writeable
+#define PTE_U           0x004   // User
+#define PTE_PWT         0x008   // Write-Through
+#define PTE_PCD         0x010   // Cache-Disable
+#define PTE_A           0x020   // Accessed
+#define PTE_D           0x040   // Dirty
+#define PTE_PS          0x080   // Page Size
+#define PTE_MBZ         0x180   // Bits must be zero
+#define PGSIZE 4096
 
-// System segment types
+#define PDEN 1024
+#define PTEN 1024
 
+#define PDESHIFT 22
+#define PTESHIFT 12
+#define PGSHIFT 12
+
+#define pde_index(va) ((va >> PDESHIFT) & 0x3FF)
+#define pte_index(va) ((va >> PTESHIFT) & 0x3FF)
 
 #ifdef __ASSEMBLER__
 
@@ -76,7 +93,7 @@ struct segment_descriptor{
   unsigned int sd_b:1;
   unsigned int sd_g:1;
   unsigned int sd_base_3:8;
-}
+};
 
 #define SEG_NULL (struct segment_descriptor){0,0,0,0,0,0,0,0,0,0,0,0,0}
 
@@ -87,10 +104,4 @@ struct segment_descriptor{
     (unsigned) (base) >> 24 }
 
 #endif // __ASSEMBLER__
-
-
-
-
-
-
 #endif // MX_MMU_H

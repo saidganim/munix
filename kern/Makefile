@@ -1,10 +1,16 @@
 
 
-obj/kernel: kern/kmain.o kern/display.o
+obj/kernel: obj/entrypgdir.o obj/kmain.o obj/display.o obj/entry.o
 	$(LD) -N $^ -o $@ -T kern/kernel.ld
 
-kern/kmain.o: kern/kmain.c
+obj/entry.o: kern/entry.S
 	$(CC) $(CFLAGS) -c $^ -o $@
 
-kern/display.o: kern/display.c
+obj/entrypgdir.o : kern/entrypgdir.c
+	$(CC) $(CFLAGS) -c $^ -o $@
+
+obj/kmain.o: kern/kmain.c
+	$(CC) $(CFLAGS) -c $^ -o $@
+
+obj/display.o: kern/display.c
 	$(CC) $(CFLAGS) -c $^ -o $@
