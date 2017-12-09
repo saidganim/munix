@@ -1,4 +1,5 @@
 #include <kern/display.h>
+#include <kern/pmap.h>
 
 void kmain(){
   fb_clear();
