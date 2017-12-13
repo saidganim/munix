@@ -3,6 +3,6 @@
 
 #include <inc/types.h>
 
-uint32_t bios_mem_size_extended();
+uint32_t bios_mem_size_15801(); // in kern/memory.S
 
 #endif

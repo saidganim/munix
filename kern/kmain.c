@@ -1,5 +1,6 @@
 #include <kern/display.h>
 #include <kern/pmap.h>
+#include <kern/cmos.h>
 
 void kmain(){
   fb_clear();
