@@ -7,7 +7,7 @@ INC=./
 INCDIRS= -I$(INC)
 
 CFLAGS = -m32 -nostdlib -nostdinc  $(INCDIRS) -fno-builtin -fno-inline -MD -std=gnu11 -fno-stack-protector \
-             -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -nostdinc -O1 -fno-omit-frame-pointer -g3
+             -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -nostdinc -O3 -fno-omit-frame-pointer
 
 build: obj/kernel.img
 
@@ -15,7 +15,7 @@ qemu: obj/boot.elf obj/kernel.img
 	qemu-system-i386 -serial mon:stdio -d cpu_reset -D /dev/stdout -hda obj/kernel.img  -m 256
 
 qemu-gdb: obj/boot.elf obj/kernel.img
-	qemu-system-i386 -S -gdb tcp::1234 -serial mon:stdio -d cpu_reset -D /dev/stdout -hda obj/kernel.img  -m 256
+	qemu-system-i386 -S -gdb tcp::1234 -serial mon:stdio -d cpu_reset -D /dev/stdout -hda obj/kernel.img  -m 1024
 
 obj/kernel.img: obj/boot.elf obj/kernel
 	$(shell dd if=/dev/zero of=obj/kernel.img~ count=10000 2>/dev/null)

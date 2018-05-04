@@ -1,6 +1,17 @@
 #include <kern/display.h>
-#include <kern/pmap.h>
 #include <kern/cmos.h>
+#include <inc/pmap.h>
+#include <inc/mmu.h>
+#include <inc/types.h>
+
+
+
+
+void kinit(){
+  // Initializing all kernel structures(memory, processes, smp)
+  kmem_init(); // first to initialize
+  
+}
 
 void kmain(){
   fb_clear();
@@ -14,5 +25,6 @@ void kmain(){
   fb_print('0');
   fb_print('.');
   fb_print('1');
+  kinit();
   while(true){};
 }

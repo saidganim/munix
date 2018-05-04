@@ -3,6 +3,8 @@
 
 #include <inc/types.h>
 
-uint32_t bios_mem_size_15801(); // in kern/memory.S
+extern uint64_t __ramsz__;
+
+void kmem_init();
 
 #endif

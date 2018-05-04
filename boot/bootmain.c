@@ -4,14 +4,16 @@
 
 #define SECSIZE 512
 
+// Everything is staticly inlined here because of we have to fit everything into 512 bytes :)
+
 typedef void (*entry_func)(void);
 
-void memset(void* dest, char f, int n){
+static inline void memset(void* dest, char f, int n){
   for(;n >= 0; --n)
     *((char*)dest + n) = f;
 };
 
-void readsect(char*, uint32_t);
+static inline void readsect(char*, uint32_t);
 void readseg(char*, uint32_t, uint32_t);
 
 void bootmain(){
@@ -31,13 +33,8 @@ void bootmain(){
     //   memset((void*)pa + ph->p_filesz, 0x0, ph->p_memsz - ph->p_filesz);
   }
   entry = (entry_func)elf->e_entry;
-  //entry += 1;
   entry();
 }
-
-// int disk_avail(){
-//   return (x86_inb(0x1F7) & 0x08);
-// }
 
 void readseg(char *buf, uint32_t size, uint32_t offset){
   size = size / SECSIZE + 1;
@@ -45,13 +42,13 @@ void readseg(char *buf, uint32_t size, uint32_t offset){
     readsect(buf + block_i * SECSIZE, offset + block_i);
 }
 
-void readsect(char *buf, uint32_t offset){
+static inline void readsect(char *buf, uint32_t offset){
   x86_outb(0x1F2, 0x1);
   x86_outb(0x1F3, (char)offset);
   x86_outb(0x1F4, (char)(offset >> 8));
   x86_outb(0x1F5, (char)(offset >> 16));
   x86_outb(0x1F6, (char)(0xE0 | ((offset >> 24) & 0xf) | (0 << 4))); // drive #0
   x86_outb(0x1F7, 0x20); // command to read
-  while(!(x86_inb(0x1F7) & 0x08))/* Do nothing */;
+  while(!(x86_inb(0x1F7) & 0x08)){__asm__ volatile ("pause");};
   x86_insl(buf, SECSIZE / 4, 0x1F0);
 };

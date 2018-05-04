@@ -1,6 +1,5 @@
 
 
-
 obj/boot.elf: obj/boot.elf_
 	$(shell objdump  -S obj/boot.elf_ > obj/boot.elf.asm)
 	$(shell objcopy -S -O binary -j .text obj/boot.elf_ obj/boot.elf)
