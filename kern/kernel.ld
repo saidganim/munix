@@ -10,4 +10,5 @@ SECTIONS
   .text : AT(0x0100000){ *(.text) }
   .data : { *(.data) }
   .bss : { *(.bss) }
+  PROVIDE(tend = .);
 }

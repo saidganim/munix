@@ -43,6 +43,8 @@
 #define PTE_PS          0x080   // Page Size
 #define PTE_MBZ         0x180   // Bits must be zero
 #define PGSIZE 4096
+#define HGPGSIZE (PGSIZE * 1024)
+#define HUGE_PG 1024
 
 #define PDEN 1024
 #define PTEN 1024

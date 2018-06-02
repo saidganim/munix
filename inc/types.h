@@ -25,6 +25,12 @@ typedef uint32_t off_t;
 typedef uint32_t pde_t;
 typedef uint32_t pte_t;
 
+typedef char pflags_t;
+
+typedef uint32_t size_t;
+typedef int32_t ssize_t;
+
+
 #define MIN(_a, _b)                                                            \
 ({                                                                             \
     typeof(_a) __a = (_a);                                                     \

@@ -10,7 +10,7 @@
 void kinit(){
   // Initializing all kernel structures(memory, processes, smp)
   kmem_init(); // first to initialize
-  
+
 }
 
 void kmain(){
@@ -25,6 +25,10 @@ void kmain(){
   fb_print('0');
   fb_print('.');
   fb_print('1');
+  fb_print(' ');
+  fb_print('x');
+  fb_print('8');
+  fb_print('6');
   kinit();
   while(true){};
 }
