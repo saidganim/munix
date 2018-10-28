@@ -9,6 +9,11 @@
   ((addr + (__brdr - 1)) / __brdr * __brdr); \
 })
 
+#define rounddown(addr, brdr) ({\
+  const typeof(brdr) _brdr = brdr;\
+  (addr / _brdr * _brdr);\
+})
+
 extern uint32_t __ramsz__;
 extern struct page_info* pglist_head;
 extern struct page_info* __kernel_pages; // array of page_info structures
@@ -30,7 +35,7 @@ struct page_info {
   pflags_t p_flags;
 };
 
-void* page_alloc(pflags_t);
+struct page_info* page_alloc(pflags_t);
 void page_free(struct page_info*);
 
 

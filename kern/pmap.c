@@ -8,7 +8,7 @@
 #include <inc/utils.h>
 
 uint32_t __ramsz__;
-uint32_t __max_kernmapped_addr;
+static uint32_t __max_kernmapped_addr = PGSIZE * 1024; // 4 MiB
 static void* current;
 struct page_info* __kernel_pages; // array of page_info structures
 struct page_info* pglist_head; // free pages linked list head
@@ -68,69 +68,60 @@ void __init kmem_init(){
 
 
 // Possible flags values : ALLOC_HUGE, ALLOC_ZERO, ALLOC_KAS
+// ALLOC_HUGE - no comments;
+// ALLOC_ZERO - no comments;
+// ALLOC_KAS  - Allocate memory which is mapped by kernel already
 // TODO: Need to test page_alloc() and page_free() funcs
-void* page_alloc(pflags_t flags){
-  size_t i, pg_num = 1;
-  struct page_info *res = NULL, **resp = NULL;
+struct page_info* page_alloc(pflags_t flags){
+  size_t i;
+  struct page_info *res = NULL, *cur = NULL;
+  uint32_t max_addr = rounddown(__ramsz__, PGSIZE);
+  unsigned short page_size = 1;
+  if(flags & ALLOC_KAS)
+    max_addr = rounddown(__max_kernmapped_addr, PGSIZE);
+
   if(flags & ALLOC_HUGE){
-    pg_num = HUGE_PG;
-  } else {
-     // Not huge alloc :
-    if(flags && ALLOC_KAS){
-      resp = &pglist_head;
-_L1:
-      if(*resp == NULL)
-        goto error;
-
-      if(page2pa(*resp) < (void*)__max_kernmapped_addr){
-        res = *resp;
-        *resp = (*resp)->p_next;
-        goto release;
+    // HUGE PAGE ALLOCATION
+    page_size = HUGE_PG;
+    size_t begpg = 0;
+    for(i = 0; i <= (max_addr - PGSIZE * HUGE_PG)/ PGSIZE - HUGE_PG; ++i){
+      if(!(__kernel_pages[i].p_flags & PG_BUSY)){
+        if(i - begpg == (HUGE_PG - 1) ){
+          res = &__kernel_pages[begpg];
+          __kernel_pages[begpg].p_flags |= PG_HUGE;
+          goto _release;
+        }
+        continue;
+      } else{
+        begpg = i + 1;
+        continue;
       }
-      resp = &((*resp)->p_next);
-      goto _L1;
-    } else {
-      res = pglist_head;
-      pglist_head = pglist_head->p_next;
-      res->p_flags = PG_BUSY;
-      goto release;
+    }
+  } else {
+    cur = pglist_head;
+    // NORMAL SIZE PAGE ALLOCATION
+    while(cur){
+      if((uint32_t)page2kva(cur) < max_addr){
+        res = cur;
+        cur->p_flags = PG_BUSY;
+        goto _release;
+      } else 
+        cur = cur->p_next;
     }
   }
-
-  for(i = 0; i < __ramsz__ / PGSIZE; ++i){
-    if(__kernel_pages[i].p_flags) // not free page
-      res = &__kernel_pages[i];
-    if((__kernel_pages + i) - res == HUGE_PG - 1)
-      break;
-  }
-
-  if(page2pa(res) + HGPGSIZE > (void*)__ramsz__)
-    goto error;
-
-  if( (flags & ALLOC_KAS) && (page2pa(res) > (void*)__max_kernmapped_addr) ) // if didn't find huge free page, than there is no such one
-    goto error;
-
-  resp = &pglist_head;
-
-  // Removing allocated pages from free pages list;
-  while(*resp != NULL){
-    if(page2pa(*resp) >= page2pa(res) && page2pa(*resp) < (page2pa(res) + HGPGSIZE)){
-      (*resp)->p_flags = PG_HUGE || PG_BUSY;
-      *resp = (*resp)->p_next;
-      (*resp)->p_next = NULL;
-    } else {
-      resp = &(*resp)->p_next;
-    }
-  }
-  goto release;
-
-error:
-  return NULL;
-
-release:
+  
+  _release:
+  if(unlikely(!res))
+    return res;
   if(flags & ALLOC_ZERO)
-    for(i = 0; i < pg_num; ++i)
-      memset((void*)page2kva(res + i), 0x0, PGSIZE);
+    memset(res, 0x0, page_size * PGSIZE);
+  for(i = 0 ; i < page_size; ++i){
+    remove_entry(&res[i], &pglist_head, p_next);
+    res[i].p_flags |= PG_BUSY;
+    res[i].p_counter = 1;
+    res[i].p_next = 0x0;
+  }
+    
   return res;
 };
 
@@ -142,6 +133,7 @@ void page_free(struct page_info* pg){
   for( i = 0; i < pg_num; ++i){
     pg[i].p_flags = 0x0;
     pg[i].p_next = pglist_head;
+    pg[i].p_counter = 0;
     pglist_head = pg + i;
   }
 }

@@ -29,17 +29,38 @@ start:
    outb %al, $0x60
 
 
-  # Detecting size of RAM
-  movl $0xE801, %eax
+   # Detecting size of RAM 0xE801
+   movl $0xE801, %eax
+   int $0x15
+   jc spin
+   cmpb $0x86, %ah
+   je spin
+   cmpb $0x80, %ah
+   je spin
+   jcxz .axbx
+   movl %ecx, %eax
+   movl %edx, %ebx
+ .axbx:
+   movl %eax, %ecx
+   movl %ebx, %eax
+   movl $64, %edx
+   mull %edx
+   addl %ecx, %eax
+   movl %eax, (0x6c00)
+
+/*# Detecting size of RAM 0xE820
+  xorl %ebx, %ebx
+  xorl %ebp, %ebp
+  movl $0x0534D4150, %edx
+  movl $24, %ecx
+  movl $0xE820, %eax
   int $0x15
   jc spin
-  cmpb $0x86, %ah
-  je spin
-  cmpb $0x80, %ah
-  je spin
-  jcxz .axbx
-  movl %ecx, %eax
-  movl %edx, %ebx
+  movl $0x0534D4150, %edx # some BIOS can reset %edx :(
+  cmpl %edx, %eax
+  jne spin
+  test %ebx, %ebx
+  jz spin
 .axbx:
   movl %eax, %ecx
   movl %ebx, %eax
@@ -47,7 +68,7 @@ start:
   mull %edx
   addl %ecx, %eax
   movl %eax, (0x6c00)
-
+*/
 
   // Jumping to protected mode
 .protmod:
@@ -73,7 +94,7 @@ start_32:
 
 spin:
   hlt;
-
+  jmp spin;
 .align 4
 gdt_table:
   SEG_NULL;
