@@ -11,15 +11,21 @@
 #define pa2kva(pa) ((pa) + KERNBASE)
 #define page2pa(p) ((void*)(PGSIZE * ((struct page_info*)p - __kernel_pages)))
 #define page2kva(p) ((void*)(pa2kva(page2pa(p))))
+#define pa2page(pa) ((struct page_info*)(pa / PGSIZE + __kernel_pages))
 #define KSTACKSIZE (8*PGSIZE)
 
-
+// This function are being used only to handle addresses mapped by kernel directly.
 static inline void* KADDR(void* pa){
-    void* res = pa2kva(pa);
-    extern uint32_t __ramsz__;
-    if(res > (void*)__ramsz__)
+    extern uint32_t __max_kernmapped_addr;
+    if(pa > (void*)__max_kernmapped_addr)
         panic("KADDR is called with wrong address");
+    return pa2kva(pa);
+}
+static inline void* PADDR(void* va){
+    void* res = kva2pa(va);
+    extern uint32_t __max_kernmapped_addr;
+    if(res > (void*)__max_kernmapped_addr)
+         panic("PADDR is called with wrong address");
     return res;
 }
-
 #endif

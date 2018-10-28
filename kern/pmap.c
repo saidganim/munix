@@ -9,7 +9,7 @@
 #include <inc/errors.h>
 
 uint32_t __ramsz__;
-static uint32_t __max_kernmapped_addr = PGSIZE * 1024; // 4 MiB
+uint32_t __max_kernmapped_addr = PGSIZE * 1024; // 4 MiB
 static void* current;
 struct page_info* __kernel_pages; // array of page_info structures
 struct page_info* pglist_head; // free pages linked list head
@@ -170,11 +170,63 @@ pte_t* pgdir_walk(pde_t* pgdir, void* va, int create){
   if(*pde && PTE_PS)
     res = pde;
   else
-    res = PTEADDR(*pde) + PTX(va);
+    res = (pte_t*)PTEADDR(*pde) + PTX(va);
 
   return KADDR(res);
 
 _fail:
   *pde = 0x0;
   return NULL;
+};
+
+int page_insert(pde_t* pgdir,void* va, struct page_info* pp, int perm){
+  pte_t* pte;
+  int createf = CREATE_NORMAL;
+  size_t i,page_to_remove = 1;
+  pte = pgdir_walk(pgdir, va, 0);
+  
+  if(perm & PTE_PS){
+    createf = CREATE_HUGE;
+    page_to_remove = HUGE_PG;
+  }
+
+  if(pte)
+    for(i = 0; i < page_to_remove; ++i)
+      page_remove(pgdir, va + PGSIZE * i); // might return -EFAULT, but it doesn't matter.
+
+  pte = pgdir_walk(pgdir, va, createf);
+  if(!pte)
+    return -ENOMEM;
+
+  *pte = (uint32_t)page2pa(pp);
+  *pte |= perm;
+  return 0;
+};
+
+int page_remove(pde_t* pgdir, void* va){
+  struct page_info *pp = NULL;
+  pte_t* pte = pgdir_walk(pgdir, va, 0);
+  if(!pte)
+    return -EFAULT;
+  pp = pa2page(PTEADDR(*pte));
+  page_decref(pp);
+  *pte = 0;
+  return 0;
+};
+
+void page_decref(struct page_info* pp){
+  if(!pp->p_counter)
+    panic("page_decref on page with counter == 0");
+  --pp->p_counter;
+  if(!pp->p_counter)
+    page_free(pp);
+}
+
+struct page_info* page_lookup(pde_t* pgdir, void* va, pte_t** pte_store){
+  pte_t *pte = pgdir_walk(pgdir, va, 0);
+  if(!pte || !(*pte & PTE_P))
+    return NULL;
+  if(pte_store)
+    *pte_store = pte;
+  return pa2page(PTEADDR(*pte));
 };

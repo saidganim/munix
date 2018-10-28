@@ -30,6 +30,7 @@ pte_t* pgdir_walk(pde_t*, void*, int);
 struct page_info* page_lookup(pde_t*, void*, pte_t**);
 int page_insert(pde_t*,void*, struct page_info*, int);
 int page_remove(pde_t*, void*);
+void page_decref(struct page_info*);
 
 extern struct page_info* pglist_head;
 extern struct page_info* __kernel_pages; // array of page_info structures

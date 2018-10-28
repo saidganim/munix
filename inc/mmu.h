@@ -118,6 +118,6 @@ struct segment_descriptor{
 #define PGNUM(va) ((uint32_t)va >> PTXSHIFT)
 #define PGOFF(va) ((uint32_t)va & 0b111111111111)
 
-#define PTEADDR(pde) ((pte_t*)(pde & ~0xFFF))
+#define PTEADDR(pde) ((uint32_t)(pde & ~0xFFF))
 #endif // __ASSEMBLER__
 #endif // MX_MMU_H
