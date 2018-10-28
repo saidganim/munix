@@ -1,5 +1,4 @@
-#include <kern/display.h>
-#include <kern/cmos.h>
+#include <inc/display.h>
 #include <inc/pmap.h>
 #include <inc/mmu.h>
 #include <inc/types.h>

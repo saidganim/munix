@@ -6,6 +6,7 @@
 #include <inc/memlayout.h>
 #include <inc/mmu.h>
 #include <inc/utils.h>
+#include <inc/errors.h>
 
 uint32_t __ramsz__;
 static uint32_t __max_kernmapped_addr = PGSIZE * 1024; // 4 MiB
@@ -48,7 +49,7 @@ static void __init pages_init(){
   This function should implement some KASLR in future
 */
 void __init kpt_init(void){
-
+  
 
 }
 
@@ -137,3 +138,43 @@ void page_free(struct page_info* pg){
     pglist_head = pg + i;
   }
 }
+
+/*
+* Walks two-level page table structure.
+* If pte of va doesnt exist:
+* - If create & CREATE_NORMAL - create page for given va
+* - If create & CREATE_HUGE - create page for pde(va) entry in pgdir
+*/
+pte_t* pgdir_walk(pde_t* pgdir, void* va, int create){
+  pde_t* pde;
+  pte_t* res = NULL;
+  pflags_t pflags = ALLOC_ZERO | ALLOC_KAS;
+  struct page_info* pp = NULL;
+
+
+  pde = pgdir + PDX(va);
+  if(!(*pde & PTE_P)){
+    // PDE is not presented. Creating new pde
+    if(!create)
+      goto _fail;
+    if(create & CREATE_HUGE){
+      pflags |= ALLOC_HUGE;
+      *pde |= PTE_PS;
+    }
+    if(!(pp = page_alloc(pflags)))
+      goto _fail;
+    *pde |= (uint32_t)page2pa(pp);
+    *pde |= PTE_P;
+  }
+
+  if(*pde && PTE_PS)
+    res = pde;
+  else
+    res = PTEADDR(*pde) + PTX(va);
+
+  return KADDR(res);
+
+_fail:
+  *pde = 0x0;
+  return NULL;
+};

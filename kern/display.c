@@ -1,4 +1,4 @@
-#include <kern/display.h>
+#include <inc/display.h>
 #include <inc/x86.h>
 
 static uint16_t* const frame_buffer = (uint16_t*)FBUFFER_IO;

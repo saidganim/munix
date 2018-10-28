@@ -5,7 +5,7 @@
 */
 /* Documentation at http://webpages.charter.net/danrollins/techhelp/0060.HTM */
 
-#include <kern/cmos.h>
+#include <inc/cmos.h>
 #include <inc/x86.h>
 
 char cmos_read(char reg){
