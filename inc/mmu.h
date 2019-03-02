@@ -33,8 +33,35 @@
 #define CR4_PVI     0x00000002  /* Protected-Mode Virtual Interrupts */
 #define CR4_VME     0x00000001  /* V86 Mode Extensions */
 
-#define pde_index(va) ((va >> PDESHIFT) & 0x3FF)
-#define pte_index(va) ((va >> PTESHIFT) & 0x3FF)
+#define pde_index(va) ((va >> PDXSHIFT) & 0x3FF)
+#define pte_index(va) ((va >> PTXSHIFT) & 0x3FF)
+
+
+#define PTE_P           0x001   // Present
+#define PTE_W           0x002   // Writeable
+#define PTE_U           0x004   // User
+#define PTE_PWT         0x008   // Write-Through
+#define PTE_PCD         0x010   // Cache-Disable
+#define PTE_A           0x020   // Accessed
+#define PTE_D           0x040   // Dirty
+#define PTE_PS          0x080   // Page Size
+#define PTE_MBZ         0x180   // Bits must be zero
+#define PGSIZE 4096
+#define HGPGSIZE (PGSIZE * 1024)
+#define HUGE_PG 1024
+
+#define PDEN 1024
+#define PTEN 1024
+
+#define PTXSHIFT 12
+#define PDXSHIFT 22
+
+#define PTX(va) (((uint32_t)va >> PTXSHIFT) & 0b1111111111)
+#define PDX(va) (((uint32_t)va >> PDXSHIFT) & 0b1111111111)
+#define PGNUM(va) ((uint32_t)va >> PTXSHIFT)
+#define PGOFF(va) ((uint32_t)va & 0b111111111111)
+
+#define PTEADDR(pde) ((uint32_t)(pde & ~0xFFF))
 
 #ifdef __ASSEMBLER__
 
@@ -47,7 +74,7 @@
     (0xC0 | (((lim) >> 28) & 0xf) ), (((base) >> 24) & 0xff);
 
 
-#else
+#else   // __ASSEMBLER__
 
 
 // Descriptor of segment
@@ -94,30 +121,6 @@ struct segment_descriptor{
  *  \---------- PGNUM(la) ----------/
 */
 
-#define PTE_P           0x001   // Present
-#define PTE_W           0x002   // Writeable
-#define PTE_U           0x004   // User
-#define PTE_PWT         0x008   // Write-Through
-#define PTE_PCD         0x010   // Cache-Disable
-#define PTE_A           0x020   // Accessed
-#define PTE_D           0x040   // Dirty
-#define PTE_PS          0x080   // Page Size
-#define PTE_MBZ         0x180   // Bits must be zero
-#define PGSIZE 4096
-#define HGPGSIZE (PGSIZE * 1024)
-#define HUGE_PG 1024
 
-#define PDEN 1024
-#define PTEN 1024
-
-#define PTXSHIFT 12
-#define PDXSHIFT 22
-
-#define PTX(va) (((uint32_t)va >> PTXSHIFT) & 0b1111111111)
-#define PDX(va) (((uint32_t)va >> PDXSHIFT) & 0b1111111111)
-#define PGNUM(va) ((uint32_t)va >> PTXSHIFT)
-#define PGOFF(va) ((uint32_t)va & 0b111111111111)
-
-#define PTEADDR(pde) ((uint32_t)(pde & ~0xFFF))
 #endif // __ASSEMBLER__
 #endif // MX_MMU_H

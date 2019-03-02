@@ -230,3 +230,190 @@ struct page_info* page_lookup(pde_t* pgdir, void* va, pte_t** pte_store){
     *pte_store = pte;
   return pa2page(PTEADDR(*pte));
 };
+
+
+/***************************************************************
+ * Checking functions.
+ * These functions are taken from JOS framework , which is base of current kernel.
+ ***************************************************************/
+
+/*
+ * Check that the pages on the page_free_list are reasonable.
+ */
+// static void check_page_free_list(bool only_low_memory)
+// {
+//     struct page_info *pp;
+//     unsigned pdx_limit = only_low_memory ? 1 : NPDENTRIES;
+//     int nfree_basemem = 0, nfree_extmem = 0;
+//     char *first_free_page;
+
+//     if (!page_free_list)
+//         panic("'page_free_list' is a null pointer!");
+
+//     if (only_low_memory) {
+//         /* Move pages with lower addresses first in the free list, since
+//          * entry_pgdir does not map all pages. */
+//         struct page_info *pp1, *pp2;
+//         struct page_info **tp[2] = { &pp1, &pp2 };
+//         for (pp = page_free_list; pp; pp = pp->pp_link) {
+//             int pagetype = PDX(page2pa(pp)) >= pdx_limit;
+//             *tp[pagetype] = pp;
+//             tp[pagetype] = &pp->pp_link;
+//         }
+//         *tp[1] = 0;
+//         *tp[0] = pp2;
+//         page_free_list = pp1;
+//     }
+
+//     /* if there's a page that shouldn't be on the free list,
+//      * try to make sure it eventually causes trouble. */
+//     for (pp = page_free_list; pp; pp = pp->pp_link)
+//         if (PDX(page2pa(pp)) < pdx_limit)
+//             memset(page2kva(pp), 0x97, 128);
+
+//     first_free_page = (char *) boot_alloc(0);
+//     for (pp = page_free_list; pp; pp = pp->pp_link) {
+//         /* check that we didn't corrupt the free list itself */
+//         assert(pp >= pages);
+//         assert(pp < pages + npages);
+//         assert(((char *) pp - (char *) pages) % sizeof(*pp) == 0);
+
+//         /* check a few pages that shouldn't be on the free list */
+//         assert(page2pa(pp) != 0);
+//         assert(page2pa(pp) != IOPHYSMEM);
+//         assert(page2pa(pp) != EXTPHYSMEM - PGSIZE);
+//         assert(page2pa(pp) != EXTPHYSMEM);
+//         assert(page2pa(pp) < EXTPHYSMEM || (char *) page2kva(pp) >= first_free_page);
+
+//         if (page2pa(pp) < EXTPHYSMEM)
+//             ++nfree_basemem;
+//         else
+//             ++nfree_extmem;
+//     }
+
+//     assert(nfree_basemem > 0);
+//     assert(nfree_extmem > 0);
+// }
+
+// /*
+//  * Check the physical page allocator (page_alloc(), page_free(),
+//  * and page_init()).
+//  */
+// static void check_page_alloc(void)
+// {
+//     struct page_info *pp, *pp0, *pp1, *pp2;
+//     struct page_info *php0, *php1, *php2;
+//     int nfree, total_free;
+//     struct page_info *fl;
+//     char *c;
+//     int i;
+
+//     if (!pages)
+//         panic("'pages' is a null pointer!");
+
+//     /* check number of free pages */
+//     for (pp = page_free_list, nfree = 0; pp; pp = pp->pp_link)
+//         ++nfree;
+//     total_free = nfree;
+
+//     /* should be able to allocate three pages */
+//     pp0 = pp1 = pp2 = 0;
+//     assert((pp0 = page_alloc(0)));
+//     assert((pp1 = page_alloc(0)));
+//     assert((pp2 = page_alloc(0)));
+
+//     assert(pp0);
+//     assert(pp1 && pp1 != pp0);
+//     assert(pp2 && pp2 != pp1 && pp2 != pp0);
+//     assert(page2pa(pp0) < npages*PGSIZE);
+//     assert(page2pa(pp1) < npages*PGSIZE);
+//     assert(page2pa(pp2) < npages*PGSIZE);
+
+//     /* temporarily steal the rest of the free pages.
+//      *
+//      * Lab 1 Bonus:
+//      * For the bonus, if you go for a different design for the page allocator,
+//      * then do update here suitably to simulate a no-free-memory situation */
+//     fl = page_free_list;
+//     page_free_list = 0;
+
+//     /* should be no free memory */
+//     assert(!page_alloc(0));
+
+//     /* free and re-allocate? */
+//     page_free(pp0);
+//     page_free(pp1);
+//     page_free(pp2);
+//     pp0 = pp1 = pp2 = 0;
+//     assert((pp0 = page_alloc(0)));
+//     assert((pp1 = page_alloc(0)));
+//     assert((pp2 = page_alloc(0)));
+//     assert(pp0);
+//     assert(pp1 && pp1 != pp0);
+//     assert(pp2 && pp2 != pp1 && pp2 != pp0);
+//     assert(!page_alloc(0));
+
+//     /* test flags */
+//     memset(page2kva(pp0), 1, PGSIZE);
+//     page_free(pp0);
+//     assert((pp = page_alloc(ALLOC_ZERO)));
+//     assert(pp && pp0 == pp);
+//     c = page2kva(pp);
+//     for (i = 0; i < PGSIZE; i++)
+//         assert(c[i] == 0);
+
+//     /* give free list back */
+//     page_free_list = fl;
+
+//     /* free the pages we took */
+//     page_free(pp0);
+//     page_free(pp1);
+//     page_free(pp2);
+
+//     /* number of free pages should be the same */
+//     for (pp = page_free_list; pp; pp = pp->pp_link)
+//         --nfree;
+//     assert(nfree == 0);
+
+//     cprintf("[4K] check_page_alloc() succeeded!\n");
+
+//     /* test allocation of huge page */
+//     pp0 = pp1 = php0 = 0;
+//     assert((pp0 = page_alloc(0)));
+//     assert((php0 = page_alloc(ALLOC_HUGE)));
+//     assert((pp1 = page_alloc(0)));
+//     assert(pp0);
+//     assert(php0 && php0 != pp0);
+//     assert(pp1 && pp1 != php0 && pp1 != pp0);
+//     assert(0 == (page2pa(php0) % (1024*PGSIZE)));
+//     if (page2pa(pp1) > page2pa(php0)) {
+//         assert(page2pa(pp1) - page2pa(php0) >= 1024*PGSIZE);
+//     }
+
+//     /* free and reallocate 2 huge pages */
+//     page_free(php0);
+//     page_free(pp0);
+//     page_free(pp1);
+//     php0 = php1 = pp0 = pp1 = 0;
+//     assert((php0 = page_alloc(ALLOC_HUGE)));
+//     assert((php1 = page_alloc(ALLOC_HUGE)));
+
+//     /* Is the inter-huge-page difference right? */
+//     if (page2pa(php1) > page2pa(php0)) {
+//         assert(page2pa(php1) - page2pa(php0) >= 1024*PGSIZE);
+//     } else {
+//         assert(page2pa(php0) - page2pa(php1) >= 1024*PGSIZE);
+//     }
+
+//     /* free the huge pages we took */
+//     page_free(php0);
+//     page_free(php1);
+
+//     /* number of free pages should be the same */
+//     nfree = total_free;
+//     for (pp = page_free_list; pp; pp = pp->pp_link)
+//         --nfree;
+//     assert(nfree == 0);
+
+//     cprintf("[4M] check_page_alloc() succeeded!\n");
+// }

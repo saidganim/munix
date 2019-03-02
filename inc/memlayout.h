@@ -1,9 +1,8 @@
 #ifndef MX_MEMLAYOUT
 #define MX_MEMLAYOUT
 
-#include <inc/mmu.h>
-#include <inc/errors.h>
 
+#include <inc/mmu.h>
 // FOR NOW only 1GB of RAM is supported and no KASLR
 
 #define KERNBASE 0xc0000000
@@ -14,6 +13,13 @@
 #define pa2page(pa) ((struct page_info*)(pa / PGSIZE + __kernel_pages))
 #define KSTACKSIZE (8*PGSIZE)
 
+#ifdef __ASSEMBLER__
+
+
+#else
+
+
+#include <inc/errors.h>
 // This function are being used only to handle addresses mapped by kernel directly.
 static inline void* KADDR(void* pa){
     extern uint32_t __max_kernmapped_addr;
@@ -28,4 +34,7 @@ static inline void* PADDR(void* va){
          panic("PADDR is called with wrong address");
     return res;
 }
-#endif
+#endif // __ASSEMBLER__
+
+
+#endif // MX_MEMLAYOUT
