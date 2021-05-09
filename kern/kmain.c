@@ -28,6 +28,6 @@ void kmain(){
   fb_print('x');
   fb_print('8');
   fb_print('6');
-  kinit();
+  // kinit();
   while(true){};
 }

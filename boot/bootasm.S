@@ -1,108 +1,52 @@
 #include <inc/mmu.h>
 
+.code16
+.text
 .global start
 start:
-  .code16
   cli
   cld
-
    xorw %ax, %ax
    movw %ax, %ds
    movw %ax, %es
    movw %ax, %ss
+   # setting the stack pointer
+   movw $start, %sp
+   # Number of the drive we booted from is stored in %dl, we need it later
+   movb %dl, boot_drive_number
+  
 
-   # Enable memory > 1MB (Legacy shit)
- wait_1:
-   inb $0x64, %al
-   testb $0x2, %al
-   jnz wait_1
-
-   movb $0xd1, %al
-   outb %al, $0x64
-
- wait_2:
-   inb $0x64, %al
-   testb $0x2, %al
-   jnz wait_2
-
-   movb $0xdf, %al
-   outb %al, $0x60
-
-
-   # Detecting size of RAM 0xE801
-   movl $0xE801, %eax
-   int $0x15
-   jc spin
-   cmpb $0x86, %ah
-   je spin
-   cmpb $0x80, %ah
-   je spin
-   jcxz .axbx
-   movl %ecx, %eax
-   movl %edx, %ebx
- .axbx:
-   movl %eax, %ecx
-   movl %ebx, %eax
-   movl $64, %edx
-   mull %edx
-   addl %ecx, %eax
-   movl %eax, (0x6c00)
-
-/*# Detecting size of RAM 0xE820
-  xorl %ebx, %ebx
-  xorl %ebp, %ebp
-  movl $0x0534D4150, %edx
-  movl $24, %ecx
-  movl $0xE820, %eax
-  int $0x15
-  jc spin
-  movl $0x0534D4150, %edx # some BIOS can reset %edx :(
-  cmpl %edx, %eax
-  jne spin
-  test %ebx, %ebx
-  jz spin
-.axbx:
-  movl %eax, %ecx
-  movl %ebx, %eax
-  movl $64, %edx
-  mull %edx
-  addl %ecx, %eax
-  movl %eax, (0x6c00)
-*/
-
-  // Jumping to protected mode
-.protmod:
-  lgdt gdtreg;
-  movl %cr0, %eax
-  orl $CR0_PE, %eax
-  movl %eax, %cr0
-
-  ljmp $MX_CS, $start_32
-
-
-  .code32
-start_32:
-  movl $MX_DS, %eax
-  movl %eax, %ds
-  movl %eax, %ss
-  movl %eax, %es
-  movl %eax, %fs
-  movl %eax, %gs
-
-  movl $start, %esp // Setting up stack pointer
-  call bootmain
-
+  movw $0x7E00, %di
+  movw $boot2_end, %si
+  subw $boot2_start, %si
+  shrw $9, %si
+  call disk_read
+  call boot2
 spin:
   hlt;
   jmp spin;
-.align 4
-gdt_table:
-  SEG_NULL;
-  // Code segment(SEG_W here means readable executable segment, read Intel manual)
-  SEG(SEG_X | SEG_W, 0x0, 0xffffffff)
-  // Data segment
-  SEG(SEG_W, 0x0, 0xffffffff)
 
-gdtreg:
-  .word . - gdt_table - 1
-  .long gdt_table
+# %si - number of blocks; %di - address of buffer
+disk_read:
+    movb boot_drive_number, %dl
+    movw $int13_disk_addr_packet, %bp
+    movw %si, 2(%bp) # number of blocks
+    movw %di, 4(%bp) # address of the "buffer"
+    movw $int13_disk_addr_packet, %si
+    movb $0x42, %ah
+    int $0x13 # http://www.ctyme.com/intr/rb-0708.htm - EXTENDED READ
+    jc disk_error
+    ret
+
+disk_error:
+  jmp spin
+
+int13_disk_addr_packet:
+.byte 0x10
+.byte 0
+.word 0x1
+.long 0x0
+.quad 0x1
+
+boot_drive_number:
+.byte 0

@@ -7,7 +7,7 @@
 #define SEG_W 0x2 // Writable segment
 #define SEG_EXP_DWN 0x4
 
-#define __memory_size ((unsigned int*)0x6c00) // For keeping RAM SIZE. TODO: dirty way, explore Linux kernel
+#define __memory_size ((unsigned int*)0x26c00) // For keeping RAM SIZE. TODO: dirty way, explore Linux kernel
 // GDT Descriptors
 #define MX_CS 0x8 // Kernel code segment
 #define MX_DS 0x10 // Kernel data segment
