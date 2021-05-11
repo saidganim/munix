@@ -22,14 +22,14 @@
 #include <inc/errors.h>
 // This function are being used only to handle addresses mapped by kernel directly.
 static inline void* KADDR(void* pa){
-    extern uint32_t __max_kernmapped_addr;
+    extern uint64_t __max_kernmapped_addr;
     if(pa > (void*)__max_kernmapped_addr)
         panic("KADDR is called with wrong address");
     return pa2kva(pa);
 }
 static inline void* PADDR(void* va){
     void* res = kva2pa(va);
-    extern uint32_t __max_kernmapped_addr;
+    extern uint64_t __max_kernmapped_addr;
     if(res > (void*)__max_kernmapped_addr)
          panic("PADDR is called with wrong address");
     return res;

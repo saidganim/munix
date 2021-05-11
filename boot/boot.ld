@@ -15,9 +15,9 @@ SECTIONS
   }
   . = 0x7E00;
   boot2_start = .;
-    .text : {
-        *(.text)
-    }
-    . = ALIGN(512);
-    boot2_end = .;
+  .text : {
+      *(.text)
+  }
+  . = ALIGN(512);
+  boot2_end = .;
 }

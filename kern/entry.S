@@ -6,6 +6,7 @@
 #define MULTIBOOT_FLAGS (0x0)
 .align 4
 .text
+.code32
 .global multiboot_hdr;
 
 multiboot_hdr:

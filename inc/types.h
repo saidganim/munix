@@ -17,17 +17,17 @@ typedef unsigned int uint32_t;
 typedef long long int64_t;
 typedef unsigned long long uint64_t;
 
-typedef uint32_t physaddr_t;
-typedef uint32_t size_t;
-typedef int32_t ssize_t;
-typedef uint32_t off_t;
+// typedef uint32_t physaddr_t;
+typedef uint64_t size_t;
+typedef int64_t ssize_t;
+typedef uint64_t off_t;
 
-typedef uint32_t pde_t;
-typedef uint32_t pte_t;
+typedef uint64_t pde_t;
+typedef uint64_t pte_t;
 
 typedef char pflags_t;
 
-typedef uint32_t size_t;
-typedef int32_t ssize_t;
+typedef uint64_t size_t;
+typedef int64_t ssize_t;
 
 #endif

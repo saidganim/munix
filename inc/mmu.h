@@ -56,12 +56,12 @@
 #define PTXSHIFT 12
 #define PDXSHIFT 22
 
-#define PTX(va) (((uint32_t)va >> PTXSHIFT) & 0b1111111111)
-#define PDX(va) (((uint32_t)va >> PDXSHIFT) & 0b1111111111)
-#define PGNUM(va) ((uint32_t)va >> PTXSHIFT)
-#define PGOFF(va) ((uint32_t)va & 0b111111111111)
+#define PTX(va) (((uint64_t)va >> PTXSHIFT) & 0b1111111111)
+#define PDX(va) (((uint64_t)va >> PDXSHIFT) & 0b1111111111)
+#define PGNUM(va) ((uint64_t)va >> PTXSHIFT)
+#define PGOFF(va) ((uint64_t)va & 0b111111111111)
 
-#define PTEADDR(pde) ((uint32_t)(pde & ~0xFFF))
+#define PTEADDR(pde) ((uint64_t)(pde & ~0xFFF))
 
 #ifdef __ASSEMBLER__
 

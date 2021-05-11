@@ -48,5 +48,6 @@ int13_disk_addr_packet:
 .long 0x0
 .quad 0x1
 
+.globl boot_drive_number
 boot_drive_number:
 .byte 0

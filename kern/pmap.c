@@ -8,8 +8,8 @@
 #include <inc/utils.h>
 #include <inc/errors.h>
 
-uint32_t __ramsz__;
-uint32_t __max_kernmapped_addr = PGSIZE * 1024; // 4 MiB
+uint64_t __ramsz__;
+uint64_t __max_kernmapped_addr = PGSIZE * 1024; // 4 MiB
 static void* current;
 struct page_info* __kernel_pages; // array of page_info structures
 struct page_info* pglist_head; // free pages linked list head
@@ -19,7 +19,7 @@ struct page_info* pglist_head; // free pages linked list head
   This function is used during initialization ONLY.
 */
 static void* boot_alloc(unsigned int pg_num){
-  extern uint32_t tend; // end of kernel text section
+  extern uint64_t tend; // end of kernel text section
   if(unlikely(!current))
     current = (void*)roundup(tend, PGSIZE);
   void* res = current;
@@ -30,11 +30,11 @@ static void* boot_alloc(unsigned int pg_num){
 }
 
 static void __init pages_init(){
-  uint32_t pg_num = __ramsz__ / PGSIZE;
-  uint32_t i;
-  uint32_t cfree;
+  uint64_t pg_num = __ramsz__ / PGSIZE;
+  uint64_t i;
+  uint64_t cfree;
   __kernel_pages = boot_alloc(pg_num);
-  cfree = (uint32_t)boot_alloc(0) / PGSIZE;
+  cfree = (uint64_t)boot_alloc(0) / PGSIZE;
   for(i = cfree; i < pg_num; ++i){
     __kernel_pages[i].p_next = &__kernel_pages[i];
     __kernel_pages[i].p_flags = 0x0;
@@ -76,7 +76,7 @@ void __init kmem_init(){
 struct page_info* page_alloc(pflags_t flags){
   size_t i;
   struct page_info *res = NULL, *cur = NULL;
-  uint32_t max_addr = rounddown(__ramsz__, PGSIZE);
+  uint64_t max_addr = rounddown(__ramsz__, PGSIZE);
   unsigned short page_size = 1;
   if(flags & ALLOC_KAS)
     max_addr = rounddown(__max_kernmapped_addr, PGSIZE);
@@ -102,7 +102,7 @@ struct page_info* page_alloc(pflags_t flags){
     cur = pglist_head;
     // NORMAL SIZE PAGE ALLOCATION
     while(cur){
-      if((uint32_t)page2kva(cur) < max_addr){
+      if((uint64_t)page2kva(cur) < max_addr){
         res = cur;
         cur->p_flags = PG_BUSY;
         goto _release;
@@ -163,7 +163,7 @@ pte_t* pgdir_walk(pde_t* pgdir, void* va, int create){
     }
     if(!(pp = page_alloc(pflags)))
       goto _fail;
-    *pde |= (uint32_t)page2pa(pp);
+    *pde |= (uint64_t)page2pa(pp);
     *pde |= PTE_P;
   }
 
@@ -198,7 +198,7 @@ int page_insert(pde_t* pgdir,void* va, struct page_info* pp, int perm){
   if(!pte)
     return -ENOMEM;
 
-  *pte = (uint32_t)page2pa(pp);
+  *pte = (uint64_t)page2pa(pp);
   *pte |= perm;
   return 0;
 };

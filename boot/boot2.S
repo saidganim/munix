@@ -1,4 +1,4 @@
-
+#include <inc/mmu.h>
 .text
 .code16
 .globl boot2
@@ -9,7 +9,8 @@ boot2:
 # we need to jump to 32-bit
 # setup init data structures, stack and jump to C
 enable_a20:
-   # Enable memory > 1MB addressable memory - Legacy shit, who ever used 1MB of RAM ? :)
+   # A20 gate: Enable memory > 1MB addressable memory - Legacy shit, who ever used 1MB of RAM ? :)
+   # https://wiki.osdev.org/A20_Line
  wait_1:
    inb $0x64, %al
    testb $0x2, %al
@@ -22,6 +23,45 @@ enable_a20:
    jnz wait_2
    movb $0xdf, %al
    outb %al, $0x60
+
+# get memory map - http://www.ctyme.com/intr/rb-1741.htm
+// e820h_memory_map:
+//     movl $0x0, %ebx
+//     movw memory_map_addr, %di
+// e820h_more:
+//     movl $0x820e, %eax
+//     movl $0x534D4150, %edx
+//     movl $20, %ecx
+//     int $0x13
+//     jc spin
+//     incl memory_map_cnt
+//     test %ebx, %ebx
+//     jz e820_done
+//     addw %cx, %di
+//     jmp e820h_more
+// e820_done: # here memory_map_cnt has number of memory maps, memory_map_addr has the beginning of the buffer
+
+// enter protmode
+    movl %cr0, %eax
+    orl $CR0_PE, %eax
+    movl %eax, %cr0
+    lgdt gdtreg
+    movw $0x10, %ax
+    movw %ax, %ds
+    movw %ax, %es
+    movw %ax, %fs
+    movw %ax, %gs
+    movw %ax, %ss
+    ljmp $0x08, $protmode 
+
+.code32
+protmode:
+# we are still in 32 bit mode
+# in *those* times function arguments were passed via stack :)
+pushl $boot_conf 
+call bootmain
+
+
 spin:
    hlt
    jmp spin
@@ -38,3 +78,13 @@ gdt_table:
 gdtreg:
   .word . - gdt_table - 1
   .long gdt_table
+
+.align 8
+boot_conf:
+memory_map_addr:
+.word 0x500
+memory_map_cnt:
+.long 0x0
+elfhdr_ptr:
+.long 0x0
+
