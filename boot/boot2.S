@@ -25,21 +25,21 @@ enable_a20:
    outb %al, $0x60
 
 # get memory map - http://www.ctyme.com/intr/rb-1741.htm
-// e820h_memory_map:
-//     movl $0x0, %ebx
-//     movw memory_map_addr, %di
-// e820h_more:
-//     movl $0x820e, %eax
-//     movl $0x534D4150, %edx
-//     movl $20, %ecx
-//     int $0x13
-//     jc spin
-//     incl memory_map_cnt
-//     test %ebx, %ebx
-//     jz e820_done
-//     addw %cx, %di
-//     jmp e820h_more
-// e820_done: # here memory_map_cnt has number of memory maps, memory_map_addr has the beginning of the buffer
+e820h_memory_map:
+    movl $0x0, %ebx
+    movw memory_map_addr, %di
+e820h_more:
+    movl $0x820e, %eax
+    movl $0x534D4150, %edx
+    movl $20, %ecx
+    int $0x15
+    // jc spin
+    incl memory_map_cnt
+    test %ebx, %ebx
+    jz e820_done
+    addw %cx, %di
+    jmp e820h_more
+e820_done: # here memory_map_cnt has number of memory maps, memory_map_addr has the beginning of the buffer
 
 // enter protmode
     movl %cr0, %eax
@@ -67,7 +67,7 @@ spin:
    jmp spin
 
 
-.align 4
+.align 8
 gdt_table:
   SEG_NULL;
   // Code segment(SEG_W here means readable executable segment, read Intel manual)

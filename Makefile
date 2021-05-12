@@ -6,18 +6,18 @@ INC=./
 
 INCDIRS= -I$(INC)
 
-CFLAGS = -mno-sse -fno-pie -nostdlib -nostdinc  $(INCDIRS) -fno-pie -fno-builtin -fno-inline -MD -std=gnu11 -fno-stack-protector \
-             -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -nostdinc -O3 -fno-omit-frame-pointer
+CFLAGS = -g3 -mno-sse -fno-pie -static -nostdlib -nostdinc  $(INCDIRS) -fno-pie -fno-builtin -fno-inline -MD -std=gnu11 -fno-stack-protector \
+             -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -nostdinc -fno-omit-frame-pointer
 
 all: build qemu
 
 build: obj obj/kernel.img
 
 qemu: obj/kernel.img
-	qemu-system-i386 -serial mon:stdio -d cpu_reset -D /dev/stdout -drive format=raw,file=obj/kernel.img  -m 1024
+	qemu-system-x86_64 -serial mon:stdio -d cpu_reset -D /dev/stdout -drive format=raw,file=obj/kernel.img  -m 1024
 
 qemu-gdb:
-	qemu-system-i386 -S -gdb tcp::1234 -serial mon:stdio -d cpu_reset -D /dev/stdout -drive format=raw,file=obj/kernel.img  -m 1024
+	qemu-system-x86_64 -S -gdb tcp::1234 -serial mon:stdio -d cpu_reset -D /dev/stdout -drive format=raw,file=obj/kernel.img  -m 1024
 
 qemu-arm: obj/boot.elf obj/kernel.img
 	qemu-system-aarch64 -machine type=virt -cpu cortex-a53 -serial mon:stdio -d cpu_reset -D /dev/stdout -hda obj/kernel.img  -m 1024

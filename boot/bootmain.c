@@ -35,7 +35,7 @@ void bootmain(struct boot_config_t* boot_cfg){
   readseg((uint32_t)elf, 4096, offset);
   if(elf->e_magic != ELF_MAGIC)
     return; // Cannot boot kernel;
-  for(ph = (struct elf_proghdr*)((void*)elf + elf->e_phoff); ph < ((struct elf_proghdr*)((void*)elf + elf->e_phoff + elf->e_phnum)); ++ph){
+  for(ph = (struct elf_proghdr*)((void*)elf + elf->e_phoff); ph < ((struct elf_proghdr*)((void*)elf + elf->e_phoff + elf->e_phnum*elf->e_phentsize)); ++ph){
     pa = ph->p_pa;
     // pa -= ph->p_offset - (ph->p_offset / SECSIZE) * SECSIZE; // Rounddown pa to be aligned by SECSIZE
     readseg((uint32_t)pa, ph->p_filesz, ph->p_offset / SECSIZE + offset);
@@ -44,7 +44,8 @@ void bootmain(struct boot_config_t* boot_cfg){
   }
   boot_cfg->elfhdr_ptr = (uint32_t)elf;
   entry = (entry_func)((uint32_t)elf->e_entry);
-  entry();
+  // entry();
+  __asm__ __volatile__("\tjmp *%1\n" : : "b"(boot_cfg), "r"(entry));
 }
 
 void readseg(uint32_t buf, uint32_t size, uint32_t offset){

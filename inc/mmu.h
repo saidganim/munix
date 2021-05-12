@@ -28,13 +28,18 @@
 #define CR4_PCE     0x00000100  /* Performance counter enable */
 #define CR4_MCE     0x00000040  /* Machine Check Enable */
 #define CR4_PSE     0x00000010  /* Page Size Extensions */
+#define CR4_PAE     0x00000020  /* Page Address Extension */
 #define CR4_DE      0x00000008  /* Debugging Extensions */
 #define CR4_TSD     0x00000004  /* Time Stamp Disable */
 #define CR4_PVI     0x00000002  /* Protected-Mode Virtual Interrupts */
 #define CR4_VME     0x00000001  /* V86 Mode Extensions */
 
-#define pde_index(va) ((va >> PDXSHIFT) & 0x3FF)
-#define pte_index(va) ((va >> PTXSHIFT) & 0x3FF)
+#define BITSMASK9 ((1U<<9)-1)
+
+#define pml4e_index(va) (((va) >> PML4XSHIFT) & BITSMASK9)
+#define pdte_index(va) (((va) >> PDTXSHIFT) & BITSMASK9)
+#define pde_index(va) (((va) >> PDXSHIFT) & BITSMASK9)
+#define pte_index(va) (((va) >> PTXSHIFT) & BITSMASK9)
 
 
 #define PTE_P           0x001   // Present
@@ -50,18 +55,26 @@
 #define HGPGSIZE (PGSIZE * 1024)
 #define HUGE_PG 1024
 
-#define PDEN 1024
-#define PTEN 1024
+#define PML4EN 512
+#define PDTEN 512
+#define PDEN 512
+#define PTEN 512
 
-#define PTXSHIFT 12
-#define PDXSHIFT 22
+#define PTXSHIFT    12
+#define PDXSHIFT    (PTXSHIFT+9)
+#define PDTXSHIFT  (PDXSHIFT+9)
+#define PML4XSHIFT   (PDTXSHIFT+9)
 
-#define PTX(va) (((uint64_t)va >> PTXSHIFT) & 0b1111111111)
-#define PDX(va) (((uint64_t)va >> PDXSHIFT) & 0b1111111111)
-#define PGNUM(va) ((uint64_t)va >> PTXSHIFT)
-#define PGOFF(va) ((uint64_t)va & 0b111111111111)
+#define PTX(va) (((uint64_t)(va) >> PTXSHIFT) & 0b1111111111)
+#define PDX(va) (((uint64_t)(va) >> PDXSHIFT) & 0b1111111111)
+#define PGNUM(va) ((uint64_t)(va) >> PTXSHIFT)
+#define PGOFF(va) ((uint64_t)(va) & 0b111111111111)
 
 #define PTEADDR(pde) ((uint64_t)(pde & ~0xFFF))
+
+#define MSR_EFER (0xC0000080)
+#define MSR_EFER_LME (1 << 8)
+
 
 #ifdef __ASSEMBLER__
 
@@ -72,6 +85,18 @@
   .word (((lim) >> 12) & 0xffff), ((base) & 0xffff); \
   .byte (((base) >> 16) & 0xff), ((type) | 0x90), \
     (0xC0 | (((lim) >> 28) & 0xf) ), (((base) >> 24) & 0xff);
+
+
+#define SEG64(type, base, lim) \
+  .word (((lim) >> 12) & 0xffff), ((base) & 0xffff); \
+  .byte (((base) >> 16) & 0xff), ((type) | 0x90), \
+    (0xA0 | (((lim) >> 28) & 0xf) ), (((base) >> 24) & 0xff);
+
+#define SEG64USER(type, base, lim) \
+  .word (((lim) >> 12) & 0xffff), ((base) & 0xffff); \
+  .byte (((base) >> 16) & 0xff), ((type) | 0xf0), \
+    (0xA0 | (((lim) >> 28) & 0xf) ), (((base) >> 24) & 0xff);
+
 
 
 #else   // __ASSEMBLER__
@@ -119,6 +144,16 @@ struct segment_descriptor{
  * +----------------+----------------+---------------------+
  *  \--- PDX(la) --/ \--- PTX(la) --/ \---- PGOFF(la) ----/
  *  \---------- PGNUM(la) ----------/
+*/
+
+
+/* Structure of virtual address in x86_64
+*  +--------9-----------+------------9----------+-------9--------+--------9-------+---------12----------+
+ * | Page ML4 Directory | Page DTable Directory | Page Directory |   Page Table   | Offset within Page  |
+ * |      Index         |            Index      |     Index      |    Index       |                     |
+ * +--------------------+-----------------------+----------------+----------------+---------------------+
+ * \----- PML4X(la) ---/ \----- PDPTX(la) -----/ \--- PDX(la) --/ \--- PTX(la) --/ \---- PGOFF(la) -----/
+ * \--------------------------------------- PGNUM(la) --------------------------------------------------/
 */
 
 
