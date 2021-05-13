@@ -9,6 +9,7 @@ void __move_cursor(uint16_t position){
   x86_outb(0x3D5, position >> 8);
   x86_outb(0x3D4, 15);
   x86_outb(0x3D5, position & 0xff);
+  fb_cursor = position;
 }
 
 void __fb_print_clr(int index, char chr, char background, char foreground){
@@ -22,7 +23,7 @@ void __fb_print(int index, char chr){
   if(index >= FBUFFER_SIZE) // Out of frame buffer
     return;
   frame_buffer[index] = chr;
-  frame_buffer[index] |= (FB_BLACK << 4 | FB_WHITE) << 8;
+  frame_buffer[index] |= (FB_BLACK << 4 | FB_GREEN) << 8;
 };
 
 void fb_print(char chr){
@@ -40,4 +41,11 @@ void fb_clear(){
   while(index < FBUFFER_SIZE)
     frame_buffer[index++] = 0;
   fb_cursor = 0;
+}
+
+void fb_nextln(){
+  int i = 0;
+  int l = FBUFFER_COLS-(fb_cursor % FBUFFER_COLS);
+  for(i = 0; i < l; ++i)
+    fb_print('\0');
 }

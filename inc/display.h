@@ -33,7 +33,7 @@ void __fb_print(int, char); // print char at ith position (white on black);
 void fb_print(char chr);
 void fb_print_clr(char chr, char background, char foreground);
 void fb_clear();
-
+void fb_nextln();
 
 
 #endif

@@ -4,15 +4,7 @@
 #include <inc/types.h>
 
 
-
-
-void kinit(){
-  // Initializing all kernel structures(memory, processes, smp)
-  kmem_init(); // first to initialize
-
-}
-
-void kmain(){
+void prnt_greetings(){
   fb_clear();
   fb_print('M');
   fb_print('U');
@@ -28,6 +20,32 @@ void kmain(){
   fb_print('x');
   fb_print('8');
   fb_print('6');
-  // kinit();
+  fb_print('_');
+  fb_print('6');
+  fb_print('4');
+  fb_nextln();
+}
+
+void kinit(){
+  // Initializing all kernel structures(memory, processes, smp)
+  fb_print('i');
+  fb_print('n');
+  fb_print('i');
+  fb_print('t');
+  fb_print(' ');
+  fb_print('k');
+  fb_print('e');
+  fb_print('r');
+  fb_print('n');
+  fb_print('e');
+  fb_print('l');
+  fb_nextln();
+  // kmem_init(); // first to initialize
+
+}
+
+void kmain(){
+  prnt_greetings();
+  kinit();
   while(true){};
 }
