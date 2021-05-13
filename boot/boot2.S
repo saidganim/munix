@@ -27,18 +27,38 @@ enable_a20:
 # get memory map - http://www.ctyme.com/intr/rb-1741.htm
 e820h_memory_map:
     movl $0x0, %ebx
-    movw memory_map_addr, %di
-e820h_more:
-    movl $0x820e, %eax
+    movl $0x500, %esi // we keep the memory map buffers here, should be safe
+e820h_iter:
+    movw $memory_map_addr_buf, %di // some BIOSes may require to have %di the same in the sequence of int calls
+    movl $0xe820, %eax
     movl $0x534D4150, %edx
     movl $20, %ecx
     int $0x15
-    // jc spin
+    jc e820_done //  see boot in linux kernel. sometimes CF is raised when mem map enum is done
     incl memory_map_cnt
     test %ebx, %ebx
     jz e820_done
+    pushl %ecx //  for future
+    pushl %ebx //  for future
+    pushl %edi // will use this reg now
+    addw %cx, %si
+    subw $1, %si
+    movl $memory_map_addr_buf, %edi
     addw %cx, %di
-    jmp e820h_more
+    subw $1, %di
+mv_byte:
+    movb (%edi), %bl
+    movb %bl, (%si)
+    decw %si
+    decw %di
+    decw %cx
+    jnz mv_byte
+mv_byte_done:
+    popl %edi
+    popl %ebx
+    popl %ecx
+    addl %ecx, %esi
+    jmp e820h_iter
 e820_done: # here memory_map_cnt has number of memory maps, memory_map_addr has the beginning of the buffer
 
 // enter protmode
@@ -53,7 +73,6 @@ e820_done: # here memory_map_cnt has number of memory maps, memory_map_addr has 
     movw %ax, %gs
     movw %ax, %ss
     ljmp $0x08, $protmode 
-
 .code32
 protmode:
 # we are still in 32 bit mode
@@ -81,8 +100,8 @@ gdtreg:
 
 .align 8
 boot_conf:
-memory_map_addr:
-.word 0x500
+memory_map_addr_buf:
+.byte 0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0
 memory_map_cnt:
 .long 0x0
 elfhdr_ptr:
