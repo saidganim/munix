@@ -21,4 +21,5 @@ SECTIONS
   .data : AT(ADDR(.data) - 0xFFFF800000000000 ) { *(.data) }
   .rodata : AT(ADDR(.rodata) - 0xFFFF800000000000) { *(.rodata) }
   .bss : AT(ADDR(.bss) - 0xFFFF800000000000 ) { *(.bss) }
+  .note.gnu.build-id : AT( ADDR(.note.gnu.build-id) - 0xFFFF800000000000) {*(.note.gnu.build-id)} 
 }
