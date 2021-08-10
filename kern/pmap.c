@@ -14,14 +14,49 @@ static void* current;
 struct page_info* __kernel_pages; // array of page_info structures
 struct page_info* pglist_head; // free pages linked list head
 
+
+
+void fix_memory_map(struct boot_config_t* boot_cfg){
+  struct e820_mmap_ent_t (*mmap_arr)[] = (struct e820_mmap_ent_t (*)[])boot_cfg->mmap_addr;
+  uint32_t i = 0, j = 0;
+  uint32_t ss_gap = 0;
+  struct e820_mmap_ent_t tmp_ent ={0};
+  // we first sort
+  // dummy shell-sort here
+  for(ss_gap = boot_cfg->mmap_cnt/2; ss_gap != 0; ss_gap /= 2){
+      for(i = ss_gap; i < boot_cfg->mmap_cnt; ++i){
+        tmp_ent = (*mmap_arr)[i];
+        for(j = i; (j >= ss_gap) && ((*mmap_arr)[j-ss_gap].mm_base_addr > tmp_ent.mm_base_addr); j -= ss_gap){
+          (*mmap_arr)[j] = (*mmap_arr)[j-ss_gap];
+        }
+      }
+
+  }
+
+  // second we merge crossing mem regions
+  for(i = 1; i < boot_cfg->mmap_cnt; ++i){
+    if((*mmap_arr)[i].mm_base_addr < ((*mmap_arr)[i-1].mm_base_addr + (*mmap_arr)[i-1].mm_size) &&
+        (*mmap_arr)[i].mm_type == (*mmap_arr)[i-1].mm_type
+    ){
+        // merge entries
+        (*mmap_arr)[i-1].mm_size = MAX((*mmap_arr)[i-1].mm_base_addr + (*mmap_arr)[i-1].mm_size, (*mmap_arr)[i].mm_base_addr + (*mmap_arr)[i].mm_size) - (*mmap_arr)[i-1].mm_base_addr;
+        for(j = i; j < boot_cfg->mmap_cnt - 1; ++j) (*mmap_arr)[j] = (*mmap_arr)[j+1];
+        --boot_cfg->mmap_cnt;
+    }
+  }
+  __ramsz__ = (*mmap_arr)[boot_cfg->mmap_cnt - 1].mm_base_addr + (*mmap_arr)[boot_cfg->mmap_cnt - 1].mm_size;
+
+}
+
+
 /*
   Allocates @pg_num number of pages.
   This function is used during initialization ONLY.
 */
 static void* boot_alloc(unsigned int pg_num){
-  extern uint64_t tend; // end of kernel text section
+  extern char tend; // end of kernel image in the memory
   if(unlikely(!current))
-    current = (void*)roundup(tend, PGSIZE);
+    current = (void*)roundup((uint64_t)&tend, PGSIZE);
   void* res = current;
   if(current + pg_num * PGSIZE >= (void*)__ramsz__)
     return NULL;
@@ -54,7 +89,7 @@ void __init kpt_init(void){
 }
 
 
-void __init kmem_init(){
+void __init kmem_init(struct boot_config_t* boot_cfg){
 
   /*
     This function has to initialize memory pages, real KPT;
@@ -62,7 +97,8 @@ void __init kmem_init(){
     // TODO: KASLR - very important (runtime ASLR)
     // TODO: ...
   */
-    __ramsz__ = *(__memory_size); // no comments :)
+
+    fix_memory_map(boot_cfg);
     pages_init();
 
 }

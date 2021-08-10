@@ -24,6 +24,21 @@ enum {
   CREATE_HUGE = 1 << 2,
 };
 
+
+/*
+  Offset  Size    Description     (Table 00580)
+  00h    QWORD   base address
+  08h    QWORD   length in bytes
+  10h    DWORD   type of address range (see #00581)
+*/
+
+struct e820_mmap_ent_t {
+  uint64_t mm_base_addr;
+  uint64_t mm_size;
+  uint32_t mm_type;
+};
+
+
 struct page_info* page_alloc(pflags_t);
 void page_free(struct page_info*);
 pte_t* pgdir_walk(pde_t*, void*, int);

@@ -2,6 +2,8 @@
 #include <inc/pmap.h>
 #include <inc/mmu.h>
 #include <inc/types.h>
+#include <inc/kern.h>
+#include <inc/memlayout.h>
 
 
 void prnt_greetings(){
@@ -26,7 +28,7 @@ void prnt_greetings(){
   fb_nextln();
 }
 
-void kinit(){
+void kinit(struct boot_config_t* boot_cfg){
   // Initializing all kernel structures(memory, processes, smp)
   fb_print('i');
   fb_print('n');
@@ -40,12 +42,16 @@ void kinit(){
   fb_print('e');
   fb_print('l');
   fb_nextln();
-  // kmem_init(); // first to initialize
+
+  // we first relocate pointers of boot_cfg
+  boot_cfg->mmap_addr += KERNBASE;
+  boot_cfg->elfhdr_ptr += KERNBASE;
+  kmem_init(boot_cfg); // first to initialize
 
 }
 
-void kmain(){
+void kmain(struct boot_config_t* boot_cfg){
   prnt_greetings();
-  kinit();
+  kinit(boot_cfg);
   while(true){};
 }
